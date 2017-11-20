@@ -1,0 +1,32 @@
+group 'org.kai.stala'
+version '0.1'
+
+apply plugin: 'java'
+apply plugin: 'scala'
+apply plugin: 'application'
+apply plugin: 'idea'
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets {
+    main {
+        scala {
+            srcDirs = ['src/main/scala']
+        }
+    }
+
+    test {
+        scala {
+            srcDirs = ['src/test/scala']
+        }
+    }
+}
+
+
+dependencies {
+    compile group: 'org.scala-lang', name: 'scala-library', version: '2.12.4'
+
+    testCompile 'junit:junit:4.12'
+}

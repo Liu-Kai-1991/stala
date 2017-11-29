@@ -1,6 +1,7 @@
-package data
+package org.kai.stala.data
 
 import java.time.temporal.Temporal
+import scala.collection.immutable._
 
 trait TimeSeries[T] extends IndexedSeq[T] {
   def timeStamp: IndexedSeq[Temporal]

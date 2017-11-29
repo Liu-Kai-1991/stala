@@ -1,3 +1,5 @@
+package org.kai.stala
+
 package object util {
 
   implicit class IterableImplict[T](val x: Iterable[T]) {
@@ -9,6 +11,8 @@ package object util {
 
     def single: Boolean =
       x.toSet.size == 1
-  }
 
+    def cross[K](y: Iterable[K]): Iterable[(T,K)] =
+      for (a <- x.view; b <- y) yield (a,b)
+  }
 }

@@ -15,4 +15,10 @@ package object util {
     def cross[K](y: Iterable[K]): Iterable[(T,K)] =
       for (a <- x.view; b <- y) yield (a,b)
   }
+
+  def time[R](block: => R): (R, Long) = {
+    val t0 = System.nanoTime()
+    val result = block
+    (result, System.nanoTime() - t0)
+  }
 }

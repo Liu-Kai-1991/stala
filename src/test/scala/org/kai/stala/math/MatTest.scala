@@ -3,9 +3,12 @@ package org.kai.stala.math
 import org.junit.Test
 import org.junit.Assert.assertTrue
 
+import scala.util.Random
+import org.kai.stala.util._
+
 class MatTest{
   val x = Mat((1,2),(3,4))
-  val k = Mat((1,1), (1,1))
+  val k = Mat((5,6), (7,8))
   val y = RowVec(1,2)
   val z = ColVec(1,2)
 
@@ -28,6 +31,8 @@ class MatTest{
     (y * x).printMat()
     (y * z).printMat()
     (z * y).printMat()
+    (x * k).printMat()
+    assertTrue((x * k).equalValue(Mat((19,22), (43,50))))
     assertTrue((x * z).equalValue(ColVec(5, 11)))
     assertTrue((y * x).equalValue(RowVec(7, 10)))
     assertTrue((y * z).equalValue(5.0))
@@ -39,6 +44,23 @@ class MatTest{
   @Test
   def plus(): Unit = {
     (x + k).printMat()
-    assertTrue((x + k).equalValue(Mat((2,3), (4,5))))
+    assertTrue((x + k).equalValue(Mat((6,8), (10,12))))
+  }
+
+  //@Test
+  def speed(): Unit = {
+    val iters = 100
+    val size = 10
+    val denseMatMultiplyDenseMat = Range(0, iters).map{
+      _ =>
+        val x = DenseMat(for (i <- Range(0, size)) yield
+          for (j <- Range(0, size)) yield
+            Random.nextDouble())
+        val y = DenseMat(for (i <- Range(0, size)) yield
+          for (j <- Range(0, size)) yield
+            Random.nextDouble())
+        time(x * y)._2
+    }
+    println(denseMatMultiplyDenseMat.sum / 1e9)
   }
 }

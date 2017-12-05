@@ -47,10 +47,10 @@ class MatTest{
     assertTrue((x + k).equalValue(Mat((6,8), (10,12))))
   }
 
-  //@Test
+  @Test
   def speed(): Unit = {
     val iters = 100
-    val size = 10
+    val size = 100
     val denseMatMultiplyDenseMat = Range(0, iters).map{
       _ =>
         val x = DenseMat(for (i <- Range(0, size)) yield

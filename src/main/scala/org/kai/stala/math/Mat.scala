@@ -3,23 +3,23 @@ package org.kai.stala.math
 import org.apache.commons.math3.linear.{MatrixUtils, RealMatrix}
 
 import scala.collection.immutable._
-import scala.collection
 import org.kai.stala.util._
 
 import scala.collection.SeqView
+import scala.reflect.ClassTag
 
-trait Mat extends IndexedSeq[IndexedSeq[Double]] {
+trait Mat{
   def apply(i: Int, j: Int): Double
   def height: Int
   def width: Int
   def dim: (Int, Int) = (height, width)
-  override def length: Int = height
+  def to2DArray: Array[Array[Double]]
 
   def printMat(): Unit = {
     val header = s"${this.getClass.getSimpleName}: ${dim._1} * ${dim._2}"
     println(header)
     println(header.map(_ => "=").mkString)
-    this.foreach{
+    to2DArray.foreach{
       row => println(row.mkString(" "))
     }
   }
@@ -34,7 +34,7 @@ trait Mat extends IndexedSeq[IndexedSeq[Double]] {
   def + (that: Mat): Mat
 
   private var realMatrixOption: Option[RealMatrix] = None
-  protected def getRealMatrix: RealMatrix = MatrixUtils.createRealMatrix(this.map(_.toArray).toArray)
+  protected def getRealMatrix: RealMatrix = MatrixUtils.createRealMatrix(to2DArray)
   def realMatrix: RealMatrix =
     if (realMatrixOption.isDefined) realMatrixOption.get
     else {
@@ -55,10 +55,9 @@ trait Mat extends IndexedSeq[IndexedSeq[Double]] {
     case _ => super.equals(obj)
   }
 
-  def rowSeqs: SeqView[IndexedSeq[Double], collection.Seq[_]] = this.view
-  def colSeqs: SeqView[IndexedSeq[Double], collection.Seq[_]] = Range(0, width).view.map(i => this.map(_(i)))
-  def rows: SeqView[RowVec, collection.Seq[_]] = rowSeqs.map(RowVec.apply)
+  def colSeqs: SeqView[Array[Double], collection.Seq[_]] = Range(0, width).view.map(i => to2DArray.map(_(i)))
   def cols: SeqView[ColVec, collection.Seq[_]] = colSeqs.map(ColVec.apply)
+  def rows: SeqView[RowVec, Array[_]] = to2DArray.view.map(RowVec.apply)
 }
 
 object Mat{
@@ -72,44 +71,88 @@ object Mat{
     // Forbid Char to be casted as Double. case b: Char=> b.toDouble
     case nonNumeric => throw new IllegalArgumentException(s"Non numeric type in Mat.apply: $nonNumeric")
   }
-  def apply(v: Double): Mat = DenseMat(Vector(Vector(v)))
-  def apply(m: Double*)(implicit i: DummyImplicit): Mat =
-    RowVec(m.toVector)
+  def apply(v: Double): Mat = DenseMat.createUnsafe(Array(Array(v)))
+  def apply(m: Double*)(implicit i: DummyImplicit): Mat = DenseMat.createUnsafe(Array(m.toArray))
   def apply(m: Product*): Mat = {
-    val vecvec = m.toVector.map(_.productIterator.toVector.map(doubleValue))
-    DenseMat(vecvec)
+    val arrarr = m.toArray.map(_.productIterator.toArray.map(doubleValue))
+    DenseMat.createSafe(arrarr)
   }
 }
 
-class DenseMat protected(val m: IndexedSeq[IndexedSeq[Double]]) extends Mat {
+class DenseMat protected(protected val m: Array[Array[Double]]) extends Mat {
   def apply(i: Int, j: Int): Double = m(i)(j)
 
   override lazy val height: Int = m.length
-  override lazy val width: Int = m.head.size
+  override lazy val width: Int = m.head.length
+  override def to2DArray: Array[Array[Double]] = m
 
-  override def apply(idx: Int): IndexedSeq[Double] = m(idx)
-
-  override def iterator: Iterator[IndexedSeq[Double]] = m.iterator
-
-  override protected def getRealMatrix: RealMatrix = MatrixUtils.createRealMatrix(m.map(_.toArray).toArray)
+  override protected def getRealMatrix: RealMatrix = MatrixUtils.createRealMatrix(m)
 
   override def * (that: Mat): Mat = {
     require(width == that.height, "DenseMat: Matrix dimension must compile")
     that match {
       case d: DenseMat =>
-        val res =
-          (for (col <- d.colSeqs) yield
-            (for (row <- rowSeqs) yield
-              (col, row).zipped.map(_ * _).sum).toVector).toVector
-        new DenseMat(res.transpose)
+        if (height * d.width > 4096) DenseMat(realMatrix.multiply(d.realMatrix)) else {
+          val res = Array.ofDim[Double](height, d.width)
+          val col = Array.ofDim[Double](width)
+          var j = 0
+          var k = 0
+          var sum = 0.0
+          var row = Array.emptyDoubleArray
+          while (j < d.width){
+            k = 0
+            while (k < width){
+              col(k) = d.m(k)(j)
+              k+=1
+            }
+            var i = 0
+            while (i < height){
+              row = m(i)
+              sum = 0.0
+              k = 0
+              while (k < width) {
+                sum += col(k)*row(k)
+                k+=1
+              }
+              res(i)(j) = sum
+              i+=1
+            }
+            j+=1
+          }
+          new DenseMat(res)
+        }
       case rv: RowVec =>
-        val res =
-          for (d <- rv.v) yield
-            for (r <- colSeqs.head) yield
-              d*r
+        val res = Array.ofDim[Double](height, that.width)
+        var i = 0
+        var j = 0
+        var row = 0.0
+        while (i < height){
+          row = m(i)(0)
+          j = 0
+          while (j < rv.width){
+            res(i)(j) = row * rv(j)
+            j+=1
+          }
+          i+=1
+        }
         new DenseMat(res)
       case cv: ColVec =>
-        val res = rowSeqs.map(row => (row, cv.v).zipped.map(_*_).sum).toVector
+        val res = Array.ofDim[Double](height)
+        var i = 0
+        var j = 0
+        var sum = 0.0
+        var row = Array.emptyDoubleArray
+        while (i < height){
+          row = m(i)
+          sum = 0.0
+          j = 0
+          while (j < width){
+            sum+=row(j)*cv(j)
+            j+=1
+          }
+          res(i) = sum
+          i+=1
+        }
         new ColVec(res)
     }
   }
@@ -129,27 +172,32 @@ class DenseMat protected(val m: IndexedSeq[IndexedSeq[Double]]) extends Mat {
         }
         new DenseMat(res)
       case rv: RowVec =>
-        new RowVec((rowSeqs.head, rv.v).zipped.map(_ + _) )
+        new RowVec((m.head, rv.toArray).zipped.map(_ + _) )
       case cv: ColVec =>
-        new ColVec((colSeqs.head, cv.v).zipped.map(_ + _) )
+        new ColVec((colSeqs.head, cv.toArray).zipped.map(_ + _) )
     }
   }
 }
 
 object DenseMat {
   class DenseMatJ(
-    override val m: Vector[Vector[Double]],
+    override protected val m: Array[Array[Double]],
     override val realMatrix: RealMatrix
   ) extends DenseMat(m)
 
-  def apply[T](m: Iterable[Iterable[T]])(implicit n: Numeric[T]): DenseMat = {
+  def apply[T:ClassTag](m: Iterable[Iterable[T]])(implicit n: Numeric[T]): DenseMat = {
     require(m.map(_.size).single)
-    new DenseMat(m.toVector.map(_.toVector.map(n.toDouble)))
+    new DenseMat(m.toArray.map(_.toArray.map(n.toDouble)))
+  }
+
+  def createSafe[T:ClassTag](m: Array[Array[T]])(implicit n: Numeric[T]): DenseMat = {
+    require(m.map(_.length).single)
+    new DenseMat(m.map(_.map(n.toDouble)))
   }
 
   def apply(realMatrix: RealMatrix) : DenseMatJ = {
-    new DenseMatJ(realMatrix.getData.toVector.map(_.toVector), realMatrix.copy)
+    new DenseMatJ(realMatrix.getData, realMatrix.copy)
   }
 
-  def createUnsafe(m: IndexedSeq[IndexedSeq[Double]]): DenseMat = new DenseMat(m)
+  def createUnsafe(m: Array[Array[Double]]): DenseMat = new DenseMat(m)
 }

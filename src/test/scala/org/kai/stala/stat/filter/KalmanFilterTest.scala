@@ -71,8 +71,8 @@ class KalmanFilterTest {
         filter.correct(z)
         filter.getStateEstimation
     }
-    assertEquals(estmations.last.v(0), 0.7873890476141263, 1e-6)
-    assertEquals(estmations.last.v(1), 0.34092009433194825, 1e-6)
+    assertEquals(estmations.last(0), 0.7873890476141263, 1e-6)
+    assertEquals(estmations.last(1), 0.34092009433194825, 1e-6)
     (states, measures, estmations).zipped.foreach{
       case (state, measure, est) =>
         println(s"< $state, | $measure")

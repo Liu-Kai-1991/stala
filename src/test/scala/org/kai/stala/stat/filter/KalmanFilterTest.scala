@@ -1,8 +1,12 @@
 package org.kai.stala.stat.filter
 
+import java.awt.Color
+
 import org.junit.Test
 import org.junit.Assert.assertEquals
 import org.kai.stala.math.{ColVec, DenseMat, Mat}
+import org.kai.stala.plot.{MultiPlot, Plot, SeriesElement, SeriesPlot}
+
 import scala.math
 import scala.util.Random
 
@@ -73,10 +77,36 @@ class KalmanFilterTest {
     }
     assertEquals(estmations.last(0), 0.7873890476141263, 1e-6)
     assertEquals(estmations.last(1), 0.34092009433194825, 1e-6)
-    (states, measures, estmations).zipped.foreach{
-      case (state, measure, est) =>
-        println(s"< $state, | $measure")
-        println(s"> $est")
-    }
+    val time = states.indices.map(_*dt)
+    val realPositions = states.map(_(0))
+    val estmatedPositions = estmations.map(_(0))
+    val realSpeed = states.map(_(1))
+    val estmatedSpeed = estmations.map(_(1))
+    val observedPositions = measures.map(_(0))
+    val realPositionLine = SeriesElement(xs = time, ys = realPositions,
+      point = Plot.Point.CIRCLE_POINT(),
+      line = Plot.Line.SOLID_LINE(color = Color.blue),
+      name = "real position")
+    val estmatedPositionLine = SeriesElement(xs = time, ys = estmatedPositions,
+      point = Plot.Point.CIRCLE_POINT(),
+      line = Plot.Line.SOLID_LINE(color = Color.red),
+      name = "estimated position")
+    val observedPositionLine = SeriesElement(xs = time, ys = observedPositions,
+      point = Plot.Point.CIRCLE_POINT(),
+      line = Plot.Line.SOLID_LINE(color = Color.green),
+      name = "observed position")
+    val positionPlot = SeriesPlot(Seq(realPositionLine, observedPositionLine, estmatedPositionLine), legendVisible = true)
+    val estimatedSpeedLine = SeriesElement(xs = time, ys = estmatedSpeed,
+      point = Plot.Point.CIRCLE_POINT(),
+      line = Plot.Line.SOLID_LINE(color = Color.red),
+      name = "estimated speed")
+    val realSpeedLine = SeriesElement(xs = time, ys = realSpeed,
+      point = Plot.Point.CIRCLE_POINT(),
+      line = Plot.Line.SOLID_LINE(color = Color.blue),
+      name = "real speed")
+    val speedPlot = SeriesPlot(Seq(realSpeedLine, estimatedSpeedLine), legendVisible = true)
+    val combinedPlot = MultiPlot(Seq(positionPlot, speedPlot), syncNavigator = true)
+    combinedPlot.showInFrame
+    Thread.sleep(50000)
   }
 }

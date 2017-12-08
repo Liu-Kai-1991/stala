@@ -62,6 +62,14 @@ case class RowVec(private val v: Array[Double]) extends Vec {
         new RowVec((v, rv.v).zipped.map(_ + _))
     }
   }
+
+  override def - (that: Mat): Mat = {
+    require(dim == that.dim, "DenseMat: Matrix dimension must compile")
+    that match {
+      case rv: RowVec =>
+        new RowVec((v, rv.v).zipped.map(_ - _))
+    }
+  }
 }
 
 object RowVec{
@@ -132,6 +140,14 @@ case class ColVec(private val v: Array[Double]) extends Vec {
     that match {
       case rv: ColVec =>
         new ColVec((v, rv.v).zipped.map(_ + _))
+    }
+  }
+
+  override def - (that: Mat): Mat = {
+    require(dim == that.dim, "DenseMat: Matrix dimension must compile")
+    that match {
+      case rv: ColVec =>
+        new ColVec((v, rv.v).zipped.map(_ - _))
     }
   }
 

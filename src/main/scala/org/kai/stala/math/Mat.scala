@@ -14,6 +14,7 @@ trait Mat{
   def width: Int
   def dim: (Int, Int) = (height, width)
   def to2DArray: Array[Array[Double]]
+  def to1DArray: Array[Double] = to2DArray.flatten
 
   def printMat(): Unit = {
     val header = s"${this.getClass.getSimpleName}: ${dim._1} * ${dim._2}"
@@ -32,6 +33,7 @@ trait Mat{
   def * (that: Mat): Mat
   def * (that: Double): Mat
   def + (that: Mat): Mat
+  def - (that: Mat): Mat
 
   private var realMatrixOption: Option[RealMatrix] = None
   protected def getRealMatrix: RealMatrix = MatrixUtils.createRealMatrix(to2DArray)
@@ -54,7 +56,6 @@ trait Mat{
       dim == (1,1) && apply(0,0) == d
     case _ => super.equals(obj)
   }
-
   def colSeqs: SeqView[Array[Double], collection.Seq[_]] = Range(0, width).view.map(i => to2DArray.map(_(i)))
   def cols: SeqView[ColVec, collection.Seq[_]] = colSeqs.map(ColVec.apply)
   def rows: SeqView[RowVec, Array[_]] = to2DArray.view.map(RowVec.apply)
@@ -76,6 +77,11 @@ object Mat{
   def apply(m: Product*): Mat = {
     val arrarr = m.toArray.map(_.productIterator.toArray.map(doubleValue))
     DenseMat.createSafe(arrarr)
+  }
+
+  def apply(height: Int, width: Int, v: Double*): Mat = {
+    assert(v.size == height * width)
+    DenseMat.createUnsafe(v.grouped(width).map(_.toArray).toArray)
   }
 }
 
@@ -175,6 +181,22 @@ class DenseMat protected(protected val m: Array[Array[Double]]) extends Mat {
         new RowVec((m.head, rv.toArray).zipped.map(_ + _) )
       case cv: ColVec =>
         new ColVec((colSeqs.head, cv.toArray).zipped.map(_ + _) )
+    }
+  }
+
+  override def - (that: Mat): Mat = {
+    require(dim == that.dim, "DenseMat: Matrix dimension must compile")
+    that match {
+      case d: DenseMat =>
+        val res = (m, d.m).zipped.map{
+          case (row, thatRow) =>
+            (row, thatRow).zipped.map(_ - _)
+        }
+        new DenseMat(res)
+      case rv: RowVec =>
+        new RowVec((m.head, rv.toArray).zipped.map(_ - _) )
+      case cv: ColVec =>
+        new ColVec((colSeqs.head, cv.toArray).zipped.map(_ - _) )
     }
   }
 }

@@ -79,7 +79,7 @@ object Mat{
     DenseMat.createSafe(arrarr)
   }
 
-  def apply(height: Int, width: Int, v: Double*): Mat = {
+  def apply(height: Int, width: Int, v: Seq[Double]): Mat = {
     assert(v.size == height * width)
     DenseMat.createUnsafe(v.grouped(width).map(_.toArray).toArray)
   }

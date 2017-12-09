@@ -2,7 +2,7 @@ package org.kai.stala.stat.est.impl
 
 import org.apache.commons.math3.distribution.NormalDistribution
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
-import org.apache.commons.math3.optim.{OptimizationData, PointValuePair}
+import org.apache.commons.math3.optim.{InitialGuess, MaxEval, OptimizationData, PointValuePair}
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.{NelderMeadSimplex, SimplexOptimizer}
 import org.kai.stala.math.{ColVec, DenseMat, Mat}
 import org.kai.stala.stat.est._
@@ -13,7 +13,10 @@ class LinearRegressionMLE(
   formula,
   new SimplexOptimizer(1e-10, 1e-30),
   PointValuePairHandler,
-  Seq(GoalType.MAXIMIZE, new NelderMeadSimplex(Array[Double](0.2, 0.2)))) {
+  Seq(GoalType.MAXIMIZE,
+    new NelderMeadSimplex(Array[Double](0.2, 0.2)),
+    new InitialGuess(Array(0.0, 0.0)),
+    new MaxEval(10000))) {
   override val optimizer = new SimplexOptimizer(1e-10, 1e-30)
 }
 

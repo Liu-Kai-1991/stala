@@ -20,10 +20,6 @@ class LinearRegressionMLE(
   override val optimizer = new SimplexOptimizer(1e-10, 1e-30)
 }
 
-object PointValuePairHandler extends OptimizeResultHandler {
-  override def apply(x: Any): Seq[Double] = x.asInstanceOf[PointValuePair].getPoint
-}
-
 class LinearRegressionMLEFormula(
   val numberOfParameters: Int
 ) extends Formula[MatSample, MatSample]{
@@ -32,7 +28,7 @@ class LinearRegressionMLEFormula(
   }
 
   override def likelihood(residual: MatSample): Double = {
-    val flatten = residual.x.to1DArray
+    val flatten = residual.x.to1DVector
     val distribution = new NormalDistribution(mean(flatten), std(flatten))
     flatten.map(distribution.density).map(math.log).sum
   }

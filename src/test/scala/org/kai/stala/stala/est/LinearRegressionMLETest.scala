@@ -13,7 +13,7 @@ class LinearRegressionMLETest {
   def testRegression(): Unit ={
     val formula = new LinearRegressionMLEFormula(2)
     val estimator = new LinearRegressionMLE(formula)
-    val x = Mat.apply(50, 2, Range(0, 100).map(_ => Random.nextDouble()))
+    val x = Mat.from1DVector(50, 2, Range(0, 100).map(_ => Random.nextDouble()))
     val beta = ColVec(3,7)
     val y = x * beta + ColVec(Range(0, 50).map(_ => Random.nextDouble()))
     val estBeta = estimator.estimate(MatSample(x), MatSample(y))

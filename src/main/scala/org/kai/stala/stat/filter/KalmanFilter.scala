@@ -46,7 +46,7 @@ case class KalmanFilter(
   def correct(z: ColVec): Unit =
     filter.correct(z.realVector)
   def getStateEstimation: ColVec =
-    ColVec(filter.getStateEstimationVector)
+    ColVec(filter.getStateEstimation.toVector)
   def getErrorCovariance: Mat =
     DenseMat(filter.getErrorCovarianceMatrix)
 }

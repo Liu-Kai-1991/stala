@@ -14,7 +14,7 @@ class MatTest{
 
   @Test
   def construct(): Unit = {
-    assertTrue(RowVec(1,2).equalValue(RowVec(Vector(1,2))))
+    assertTrue(RowVec(1,2).equalValue(RowVec(Vector(1.0,2.0))))
     assertTrue(ColVec(1,2).equalValue(ColVec(Vector(1,2))))
     assertTrue(Mat(5).equalValue(5.0))
     assertTrue(Mat(2,3).equalValue(DenseMat(Vector(Vector(2,3)))))

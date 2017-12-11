@@ -8,10 +8,10 @@ import org.apache.commons.math3.optim.{BaseOptimizer, OptimizationData}
 class MaximumLikelyhoodEstimator[X <: Sample[X], Y <: Sample[Y]](
   val formula: Formula[X, Y],
   val optimizer: BaseOptimizer[_],
-  val optimizeResultHandler: OptimizeResultHandler,
+  val optimizeResultHandler: OptimizationResultHandler,
   val optimizationData: Seq[OptimizationData]
 ) {
-  def estimate(xSample: X, ySample: Y): Seq[Double] = {
+  def estimate(xSample: X, ySample: Y): OptimizationResult = {
     val objectiveFunction =
       if (formula.numberOfParameters > 1){
         val multivariateFunction = new MultivariateFunction {
@@ -30,8 +30,4 @@ class MaximumLikelyhoodEstimator[X <: Sample[X], Y <: Sample[Y]](
     val optimizeResult = optimizer.optimize(objectiveFunction +: optimizationData :_*)
     optimizeResultHandler(optimizeResult)
   }
-}
-
-trait OptimizeResultHandler{
-  def apply(x: Any): Seq[Double]
 }

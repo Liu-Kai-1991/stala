@@ -107,6 +107,6 @@ class KalmanFilterTest {
     val speedPlot = SeriesPlot(Seq(realSpeedLine, estimatedSpeedLine), legendVisible = true)
     val combinedPlot = MultiPlot(Seq(positionPlot, speedPlot), syncNavigator = true)
     combinedPlot.showInFrame
-    Thread.sleep(50000)
+    Thread.sleep(5000)
   }
 }

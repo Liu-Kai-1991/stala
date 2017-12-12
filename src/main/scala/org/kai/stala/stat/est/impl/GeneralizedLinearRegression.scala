@@ -1,19 +1,18 @@
 package org.kai.stala.stat.est.impl
 
-import org.apache.commons.math3.distribution.NormalDistribution
-import org.apache.commons.math3.optim.{BaseOptimizer, OptimizationData}
+import org.apache.commons.math3.optim.{BaseOptimizer, InitialGuess, MaxEval, OptimizationData}
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.{NelderMeadSimplex, SimplexOptimizer}
 import org.kai.stala.math.{ColVec, Mat, MatOption}
-import org.kai.stala.stat.est._
-import org.kai.stala.stat.est.impl.GeneralizedLinearRegressionFormula.DistributionAndLinkageFunction
+import org.kai.stala.stat.est.{PointValuePairHandler, _}
+import org.kai.stala.stat.est.impl.GeneralizedLinearRegressionFormula.LinkageFunction
 
 class GeneralizedLinearRegression(
-  override val formula: Formula[MatSample, MatSample],
+  override val formula: GeneralizedLinearRegressionFormula,
   override val optimizer: BaseOptimizer[_],
   override val optimizeResultHandler: OptimizationResultHandler,
   override val optimizationData: Seq[OptimizationData]
-) extends MaximumLikelyhoodEstimator[MatSample,MatSample](
+) extends MaximumLikelihoodEstimator[MatSample,MatSample](
   formula,
   optimizer,
   optimizeResultHandler,
@@ -21,38 +20,63 @@ class GeneralizedLinearRegression(
 )
 
 object GeneralizedLinearRegression{
-
-
+  def apply(
+    formula: GeneralizedLinearRegressionFormula,
+    maxEval: Int = 1000,
+    initialGuess: Option[Seq[Double]] = None,
+    optimizerAlgo: Option[OptimizationData] = None,
+    optimizer: BaseOptimizer[_] = new SimplexOptimizer(1e-10, 1e-30),
+    optimizeResultHandler: OptimizationResultHandler = PointValuePairHandler): GeneralizedLinearRegression = {
+    require(initialGuess.forall(_.size == formula.numberOfParameters))
+    val optimizerAlgoUsed = optimizerAlgo match {
+      case Some(o) => Some(o)
+      case None =>
+        optimizer match {
+          case _ : SimplexOptimizer =>
+            Some(new NelderMeadSimplex(Array.fill[Double](formula.numberOfParameters)(0.2)))
+          case _ => None
+        }
+    }
+    val optimizationData: Seq[OptimizationData] = Seq(
+      GoalType.MAXIMIZE,
+      new InitialGuess(initialGuess.map(_.toArray).getOrElse(
+        Array.fill[Double](formula.numberOfParameters)(0.0))),
+      new MaxEval(maxEval)) ++ optimizerAlgoUsed
+    new GeneralizedLinearRegression(formula, optimizer, optimizeResultHandler, optimizationData)
+  }
 }
 
 object GeneralizedLinearRegressionFormula{
-  trait DistributionAndLinkageFunction{
-    def density(x: Double): Double
-    def linkage(x: Double): Double
+  trait LinkageFunction{
+    def logLikelihood(y: Double, mu: Double): Double
+    def inverseLinkage(y: Double): Double
   }
   object Distribution{
-    object Normal extends DistributionAndLinkageFunction{
-      val dist = new NormalDistribution
-      override def density(x: Double): Double = (new NormalDistribution).density(x)
-      override def linkage(x: Double): Double = x
+    object Normal extends LinkageFunction{
+      override def logLikelihood(y: Double, mu: Double): Double = -(y-mu)*(y-mu)
+      override def inverseLinkage(x: Double): Double = x
+    }
+    object Binomial extends LinkageFunction {
+      override def logLikelihood(y: Double, mu: Double): Double = y * math.log(mu) + (1-y) * math.log(1-mu)
+      override def inverseLinkage(x: Double): Double = 1/(1 + math.exp(-x))
     }
   }
 }
 
 class GeneralizedLinearRegressionFormula(
-  matOption: MatOption,
-  distributionAndLinkageFunction: DistributionAndLinkageFunction
+  beta: MatOption,
+  linkageFunction: LinkageFunction
 ) extends Formula[MatSample, MatSample]{
-  override def numberOfParameters: Int = matOption.numberOfNone
+  override def numberOfParameters: Int = beta.numberOfNone
 
-  override def update(parameters: Seq[Double]): LinearRegressionMLECompleteFormula = {
-    LinearRegressionMLECompleteFormula(numberOfParameters, ColVec(parameters :_*))
+  override def update(parameters: Seq[Double]): GeneralizedLinearRegressionCompleteFormula = {
+    GeneralizedLinearRegressionCompleteFormula(beta.toMat(parameters))
   }
 
-  override def likelihood(residual: MatSample): Double = {
-    val flatten = residual.x.to1DVector
-    val distribution = new NormalDistribution(mean(flatten), std(flatten))
-    flatten.map(distribution.density).map(math.log).sum
+  override def logLikelihood(yObs: MatSample, xBeta: MatSample): Double = {
+    (yObs.x.to1DVector, xBeta.x.to1DVector).zipped.map{
+      case (y, n) => linkageFunction.logLikelihood(y, linkageFunction.inverseLinkage(n))
+    }.sum
   }
 }
 
@@ -63,8 +87,9 @@ case class GeneralizedLinearRegressionCompleteFormula(
   override def fit(sample: MatSample): MatSample = {
     if (sample.x.width == beta.height)
       MatSample(sample.x * beta)
-    else {
-      ???
-    }
+    else if (sample.x.width + 1 == beta.height) {
+      MatSample(sample.x.cBind(ColVec.fill(sample.x.height, 1.0)) * beta)
+    } else throw new IllegalArgumentException(s"Formula does not compile with sample, beta has ${beta.height} rows" +
+      s"but sample has ${sample.x.width} columns")
   }
 }

@@ -8,8 +8,8 @@ trait OptimizationResultHandler{
 
 trait OptimizationResult
 
-class EstimatedParameter(parameters: Seq[Double]) extends OptimizationResult
+case class EstimatedParameter(parameters: Seq[Double]) extends OptimizationResult
 
 object PointValuePairHandler extends OptimizationResultHandler {
-  override def apply(x: Any): EstimatedParameter = new EstimatedParameter(x.asInstanceOf[PointValuePair].getPoint)
+  override def apply(x: Any): EstimatedParameter = EstimatedParameter(x.asInstanceOf[PointValuePair].getPoint)
 }

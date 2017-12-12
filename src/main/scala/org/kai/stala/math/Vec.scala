@@ -98,6 +98,7 @@ object RowVec{
   def apply[T:ClassTag](v: T*)(implicit n: Numeric[T]): RowVec = new RowVec(v.toVector.map(n.toDouble))
   def apply[T:ClassTag](v: Iterable[T])(implicit n: Numeric[T]): RowVec = new RowVec(v.toVector.map(n.toDouble))
   def apply(v: RealVector): RowVec = new RowVecJ(v.toArray.toVector, v)
+  def fill(n: Int, v: Double): RowVec = new RowVec(Vector.fill[Double](n)(v))
 }
 
 class ColVec(override val to1DVector: Vector[Double]) extends Vec {
@@ -186,4 +187,5 @@ object ColVec{
   def apply[T:ClassTag](v: T*)(implicit n: Numeric[T]): ColVec = new ColVec(v.toVector.map(n.toDouble))
   def apply[T:ClassTag](v: Iterable[T])(implicit n: Numeric[T]): ColVec = new ColVec(v.toVector.map(n.toDouble))
   def apply(v: RealVector): ColVec = new ColVecJ(v.toArray.toVector, v)
+  def fill(n: Int, v: Double): ColVec = new ColVec(Vector.fill[Double](n)(v))
 }

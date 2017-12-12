@@ -52,8 +52,8 @@ class ColVecOption(override val to1DOptionVector: Vector[Option[Double]]) extend
     ColVec(to1DOptionVector.map(_.getOrElse(fillsIter.next())))
   }
 
-  def height: Int = 1
-  override lazy val width: Int = to1DOptionVector.length
+  def width: Int = 1
+  override lazy val height: Int = to1DOptionVector.length
 }
 
 object ColVecOption{

@@ -9,7 +9,7 @@ import org.kai.stala.stat.est._
 
 class LinearRegressionMLE(
   override val formula: LinearRegressionMLEFormula
-) extends MaximumLikelyhoodEstimator[MatSample, MatSample](
+) extends MaximumLikelihoodEstimator[MatSample, MatSample](
   formula,
   new SimplexOptimizer(1e-10, 1e-30),
   PointValuePairHandler,
@@ -27,8 +27,8 @@ class LinearRegressionMLEFormula(
     LinearRegressionMLECompleteFormula(numberOfParameters, ColVec(parameters :_*))
   }
 
-  override def likelihood(residual: MatSample): Double = {
-    val flatten = residual.x.to1DVector
+  override def logLikelihood(y: MatSample, yEst: MatSample): Double = {
+    val flatten = (y.x - yEst.x).to1DVector
     val distribution = new NormalDistribution(mean(flatten), std(flatten))
     flatten.map(distribution.density).map(math.log).sum
   }

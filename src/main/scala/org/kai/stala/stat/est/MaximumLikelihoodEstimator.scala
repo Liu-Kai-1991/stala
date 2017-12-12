@@ -5,7 +5,7 @@ import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction
 import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction
 import org.apache.commons.math3.optim.{BaseOptimizer, OptimizationData}
 
-class MaximumLikelyhoodEstimator[X <: Sample[X], Y <: Sample[Y]](
+class MaximumLikelihoodEstimator[X <: Sample[X], Y <: Sample[Y]](
   val formula: Formula[X, Y],
   val optimizer: BaseOptimizer[_],
   val optimizeResultHandler: OptimizationResultHandler,
@@ -16,14 +16,14 @@ class MaximumLikelyhoodEstimator[X <: Sample[X], Y <: Sample[Y]](
       if (formula.numberOfParameters > 1){
         val multivariateFunction = new MultivariateFunction {
           override def value(point: Array[Double]): Double =
-            formula.likelihood(formula.update(point).fit(xSample).residual(ySample))
+            formula.logLikelihood(ySample, formula.update(point).fit(xSample))
         }
         new ObjectiveFunction(multivariateFunction)
       }
       else{
         val univariateFunction = new UnivariateFunction {
           override def value(x: Double): Double =
-            formula.likelihood(formula.update(Array(x)).fit(xSample).residual(ySample))
+            formula.logLikelihood(ySample, formula.update(Array(x)).fit(xSample))
         }
         new UnivariateObjectiveFunction(univariateFunction)
       }

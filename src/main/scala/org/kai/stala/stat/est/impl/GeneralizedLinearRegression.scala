@@ -3,6 +3,7 @@ package org.kai.stala.stat.est.impl
 import org.apache.commons.math3.optim.{BaseOptimizer, InitialGuess, MaxEval, OptimizationData}
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.{NelderMeadSimplex, SimplexOptimizer}
+import org.apache.commons.math3.optim.univariate.{BrentOptimizer, SearchInterval}
 import org.kai.stala.math.{ColVec, Mat, MatOption}
 import org.kai.stala.stat.est.{PointValuePairHandler, _}
 import org.kai.stala.stat.est.impl.GeneralizedLinearRegressionFormula.LinkageFunction
@@ -20,28 +21,53 @@ class GeneralizedLinearRegression(
 )
 
 object GeneralizedLinearRegression{
+  val defaultUpperBound: Double = 1e20
+  val defaultLowerBound: Double = -1e20
+
+  def buildFromSample(
+    y: MatSample,
+    x: MatSample,
+    linkageFunction: LinkageFunction,
+    includeIntercept: Boolean = true,
+    maxEval: Int = 10000,
+    initialGuessOption: Option[Seq[Double]] = None,
+    optimizerAlgoOption: Option[OptimizationData] = None,
+    optimizerOption: Option[BaseOptimizer[_]] = None,
+    optimizeResultHandler: OptimizationResultHandler = PointValuePairHandler): GeneralizedLinearRegression = {
+    val beta = MatOption.empty(x.x.width + (if (includeIntercept) 1 else 0), y.x.width)
+    val formula = new GeneralizedLinearRegressionFormula(beta, linkageFunction)
+    apply(formula, maxEval, initialGuessOption, optimizerAlgoOption, optimizerOption, optimizeResultHandler)
+  }
+
   def apply(
     formula: GeneralizedLinearRegressionFormula,
-    maxEval: Int = 1000,
-    initialGuess: Option[Seq[Double]] = None,
-    optimizerAlgo: Option[OptimizationData] = None,
-    optimizer: BaseOptimizer[_] = new SimplexOptimizer(1e-10, 1e-30),
+    maxEval: Int = 10000,
+    initialGuessOption: Option[Seq[Double]] = None,
+    optimizerAlgoOption: Option[OptimizationData] = None,
+    optimizerOption: Option[BaseOptimizer[_]] = None,
     optimizeResultHandler: OptimizationResultHandler = PointValuePairHandler): GeneralizedLinearRegression = {
-    require(initialGuess.forall(_.size == formula.numberOfParameters))
-    val optimizerAlgoUsed = optimizerAlgo match {
+    val initialGuess = initialGuessOption.getOrElse(Seq.fill[Double](formula.numberOfParameters)(0.0))
+    require(initialGuess.size == formula.numberOfParameters)
+    val optimizer = optimizerOption.getOrElse(
+      if (formula.numberOfParameters > 1) new SimplexOptimizer(1e-10, 1e-30) else new BrentOptimizer(1e-10, 1e-30)
+    )
+    val optimizerAlgoUsed = optimizerAlgoOption match {
       case Some(o) => Some(o)
       case None =>
         optimizer match {
           case _ : SimplexOptimizer =>
             Some(new NelderMeadSimplex(Array.fill[Double](formula.numberOfParameters)(0.2)))
-          case _ => None
+          case _ : BrentOptimizer =>
+            None
+          case _ =>
+            None
         }
     }
     val optimizationData: Seq[OptimizationData] = Seq(
       GoalType.MAXIMIZE,
-      new InitialGuess(initialGuess.map(_.toArray).getOrElse(
-        Array.fill[Double](formula.numberOfParameters)(0.0))),
-      new MaxEval(maxEval)) ++ optimizerAlgoUsed
+      new InitialGuess(initialGuess.toArray),
+      new MaxEval(maxEval),
+      new SearchInterval(defaultLowerBound, defaultUpperBound)) ++ optimizerAlgoUsed
     new GeneralizedLinearRegression(formula, optimizer, optimizeResultHandler, optimizationData)
   }
 }
@@ -59,6 +85,10 @@ object GeneralizedLinearRegressionFormula{
     object Binomial extends LinkageFunction {
       override def logLikelihood(y: Double, mu: Double): Double = y * math.log(mu) + (1-y) * math.log(1-mu)
       override def inverseLinkage(x: Double): Double = 1/(1 + math.exp(-x))
+    }
+    object Poisson extends LinkageFunction {
+      override def logLikelihood(y: Double, mu: Double): Double = y * math.log(mu) - mu
+      override def inverseLinkage(x: Double): Double = math.exp(x)
     }
   }
 }

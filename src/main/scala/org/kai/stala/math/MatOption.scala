@@ -74,4 +74,7 @@ object MatOption{
     val arrarr = m.toVector.map(_.productIterator.toVector.map(doubleOption))
     new DenseMatOption(arrarr)
   }
+
+  def empty(height: Int, width: Int): MatOption =
+    new DenseMatOption(Vector.fill[Vector[Option[Double]]](height)(Vector.fill[Option[Double]](width)(None)))
 }

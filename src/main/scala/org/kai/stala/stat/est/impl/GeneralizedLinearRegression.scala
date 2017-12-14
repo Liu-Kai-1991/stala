@@ -94,26 +94,22 @@ object GeneralizedLinearRegressionFormula{
 }
 
 class GeneralizedLinearRegressionFormula(
-  beta: MatOption,
+  betaOption: MatOption,
   linkageFunction: LinkageFunction
 ) extends Formula[MatSample, MatSample]{
-  override def numberOfParameters: Int = beta.numberOfNone
-
+  override def numberOfParameters: Int = betaOption.numberOfNone
   override def update(parameters: Seq[Double]): GeneralizedLinearRegressionCompleteFormula = {
-    GeneralizedLinearRegressionCompleteFormula(beta.toMat(parameters))
-  }
-
-  override def logLikelihood(yObs: MatSample, xBeta: MatSample): Double = {
-    (yObs.x.to1DVector, xBeta.x.to1DVector).zipped.map{
-      case (y, n) => linkageFunction.logLikelihood(y, linkageFunction.inverseLinkage(n))
-    }.sum
+    GeneralizedLinearRegressionCompleteFormula(betaOption.toMat(parameters), betaOption, linkageFunction)
   }
 }
 
 
 case class GeneralizedLinearRegressionCompleteFormula(
-  beta: Mat
-) extends CompleteFormula[MatSample, MatSample] {
+  beta: Mat,
+  betaOption: MatOption,
+  linkageFunction: LinkageFunction
+) extends GeneralizedLinearRegressionFormula(betaOption, linkageFunction)
+  with CompleteFormula[MatSample, MatSample] {
   override def fit(sample: MatSample): MatSample = {
     if (sample.x.width == beta.height)
       MatSample(sample.x * beta)
@@ -121,5 +117,10 @@ case class GeneralizedLinearRegressionCompleteFormula(
       MatSample(sample.x.cBind(ColVec.fill(sample.x.height, 1.0)) * beta)
     } else throw new IllegalArgumentException(s"Formula does not compile with sample, beta has ${beta.height} rows" +
       s"but sample has ${sample.x.width} columns")
+  }
+  override def logLikelihood(yObs: MatSample, xBeta: MatSample): Double = {
+    (yObs.x.to1DVector, xBeta.x.to1DVector).zipped.map{
+      case (y, n) => linkageFunction.logLikelihood(y, linkageFunction.inverseLinkage(n))
+    }.sum
   }
 }

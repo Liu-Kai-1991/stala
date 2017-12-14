@@ -11,11 +11,13 @@ trait OptimizationResult{
   def parameters: Seq[Double]
 }
 
-case class EstimatedParameter(parameters: Seq[Double]) extends OptimizationResult
+case class EstimatedParameter(
+  parameters: Seq[Double],
+  value: Double) extends OptimizationResult
 
 object PointValuePairHandler extends OptimizationResultHandler {
   override def apply(x: Any): EstimatedParameter = x match {
-    case v: UnivariatePointValuePair => EstimatedParameter(Seq(v.getPoint))
-    case v: PointValuePair => EstimatedParameter(v.getPoint)
+    case v: UnivariatePointValuePair => EstimatedParameter(Seq(v.getPoint), v.getValue)
+    case v: PointValuePair => EstimatedParameter(v.getPoint, v.getValue)
   }
 }

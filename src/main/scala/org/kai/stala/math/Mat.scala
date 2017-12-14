@@ -62,6 +62,7 @@ trait Mat{
 
   def cBind(that: Mat): Mat
   def rBind(that: Mat): Mat
+  def map(f: Double => Double): Mat
 }
 
 object Mat{
@@ -100,6 +101,8 @@ class DenseMat protected(val m: Vector[Vector[Double]]) extends Mat {
   override def to2DVector: Vector[Vector[Double]] = m
 
   override protected def getRealMatrix: RealMatrix = MatrixUtils.createRealMatrix(m.map(_.toArray).toArray)
+
+  override def map(f: Double => Double): DenseMat = DenseMat(m.map(_.map(f)))
 
   override def * (that: Mat): Mat = {
     require(width == that.height, "DenseMat: Matrix dimension must compile")

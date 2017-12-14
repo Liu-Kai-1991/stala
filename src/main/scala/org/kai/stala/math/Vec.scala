@@ -31,6 +31,8 @@ class RowVec(override val to1DVector: Vector[Double]) extends Vec {
     to1DVector(j)
   }
 
+  override def map(f: Double => Double): RowVec = RowVec(to1DVector.map(f))
+
   override def * (that: Mat): Mat = {
     require(width == that.height, "DenseMat: Matrix dimension must compile")
     that match {
@@ -111,6 +113,8 @@ class ColVec(override val to1DVector: Vector[Double]) extends Vec {
     require(j == 0)
     to1DVector(i)
   }
+
+  override def map(f: Double => Double): ColVec = ColVec(to1DVector.map(f))
 
   override def * (that: Mat): Mat = {
     require(width == that.height, "DenseMat: Matrix dimension must compile")

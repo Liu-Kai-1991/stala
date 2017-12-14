@@ -16,14 +16,14 @@ class MaximumLikelihoodEstimator[X <: Sample[X], Y <: Sample[Y]](
       if (formula.numberOfParameters > 1){
         val multivariateFunction = new MultivariateFunction {
           override def value(point: Array[Double]): Double =
-            formula.logLikelihood(ySample, formula.update(point).fit(xSample))
+            formula.update(point).fitLogLikelihood(ySample, xSample)
         }
         new ObjectiveFunction(multivariateFunction)
       }
       else{
         val univariateFunction = new UnivariateFunction {
           override def value(x: Double): Double =
-            formula.logLikelihood(ySample, formula.update(Array(x)).fit(xSample))
+            formula.update(x).fitLogLikelihood(ySample, xSample)
         }
         new UnivariateObjectiveFunction(univariateFunction)
       }

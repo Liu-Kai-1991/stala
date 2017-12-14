@@ -1,10 +1,11 @@
 package org.kai.stala.stala.est
 
-import org.apache.commons.math3.distribution.{BinomialDistribution, PoissonDistribution}
+import org.apache.commons.math3.distribution.PoissonDistribution
+import org.apache.commons.math3.random.Well512a
 import org.junit.Test
 import org.kai.stala.math.{ColVec, ColVecOption, Mat}
 import org.kai.stala.stat.est.MatSample
-import org.kai.stala.stat.est.impl.{GeneralizedLinearRegression, GeneralizedLinearRegressionFormula, LinearRegressionMLE, LinearRegressionMLEFormula}
+import org.kai.stala.stat.est.impl.{GeneralizedLinearRegression, GeneralizedLinearRegressionFormula}
 import org.junit.Assert._
 
 import scala.util.Random
@@ -18,10 +19,13 @@ class GeneralizedLinearRegressionTest {
   val y1: Mat = x * beta + ColVec(Range(0, obsSize).map(_ => Random.nextGaussian() * 2 + 1))
   val logistic: Mat = ColVec(y1.to1DVector.map(GeneralizedLinearRegressionFormula.Distribution.Binomial.inverseLinkage))
   val y2: Mat = ColVec(logistic.to1DVector.map{p => if (p > Random.nextDouble) 1 else 0})
-  //y3 = 1 * x1 + 2 * x2 + 20
+  //y3 = 1 * x1 + 2 * x2 + 7
   val beta3 = ColVec(1,2)
-  val y3: Mat = ColVec((x * beta3 + ColVec(Range(0, obsSize).map(_ => Random.nextGaussian() + 8))).to1DVector.map(mu => new PoissonDistribution(mu).sample()))
-
+  val random = new Well512a(0)
+  val mu: Mat = (x * beta3 + ColVec.fill(x.height, 7)).map(math.exp)
+  val y3: Mat = ColVec(mu.to1DVector.map(mu =>
+      new PoissonDistribution(random, mu, PoissonDistribution.DEFAULT_EPSILON,
+        PoissonDistribution.DEFAULT_MAX_ITERATIONS).sample()))
 
   @Test
   def normal1(): Unit ={
@@ -105,6 +109,7 @@ class GeneralizedLinearRegressionTest {
       GeneralizedLinearRegressionFormula.Distribution.Poisson)
     val estimator = GeneralizedLinearRegression(formula)
     val estBeta = estimator.estimate(MatSample(x), MatSample(y3))
-    println(estBeta.parameters)
+    assertArrayEquals(Array(1.0007973744063716, 2.000612988516739, 6.9973337109694995),
+      estBeta.parameters.toArray, 1e-10)
   }
 }

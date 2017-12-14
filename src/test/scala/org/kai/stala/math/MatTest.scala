@@ -1,9 +1,9 @@
 package org.kai.stala.math
 
 import org.junit.Test
-import org.junit.Assert.assertTrue
+import org.junit.Assert._
 
-import scala.util.Random
+import scala.util.{Random, Try}
 import org.kai.stala.util._
 
 class MatTest{
@@ -47,7 +47,7 @@ class MatTest{
     assertTrue((x + k).equalValue(Mat((6,8), (10,12))))
   }
 
-  @Test
+  //@Test
   def speed(): Unit = {
     val iters = 100
     val size = 100
@@ -62,5 +62,11 @@ class MatTest{
         time(x * y)._2
     }
     println(denseMatMultiplyDenseMat.sum / 1e9)
+  }
+
+  @Test
+  def determinant(): Unit = {
+    assertEquals(-2, x.determinant, 1e-10)
+    assertTrue(Try(x.cBind(k).determinant).toOption.isEmpty)
   }
 }

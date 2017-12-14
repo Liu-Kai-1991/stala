@@ -7,7 +7,8 @@ trait Formula[X <: Sample[X], Y <: Sample[Y]] {
 }
 
 trait CompleteFormula[X <: Sample[X], Y <: Sample[Y]] extends Formula[X, Y]{
-  def logLikelihood(y: Y, estimated: Y): Double
+  def logLikelihoodCalc(y: Y, estimated: Y): Double
+  def logLikelihoodReal(y: Y, estimated: Y): Double = ???
   def fit(sample: X): Y
-  final def fitLogLikelihood(y: Y, sample: X): Double = logLikelihood(y, fit(sample))
+  final def fitLogLikelihood(y: Y, sample: X): Double = logLikelihoodCalc(y, fit(sample))
 }

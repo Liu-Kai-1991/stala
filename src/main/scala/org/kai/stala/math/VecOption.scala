@@ -5,10 +5,13 @@ trait VecOption extends MatOption{
   def apply(i: Int): Option[Double] = to1DOptionVector(i)
   def toVec(fill: Double): Vec
   def toVec(fills: Iterable[Double]): Vec
+  def toVec(fillsIter: Iterator[Double]): Vec
 
-  override def toMat(fill: Double): Mat = toVec(fill)
+  override def toMat(fill: Double): Vec = toVec(fill)
 
-  override def toMat(fills: Iterable[Double]): Mat = toVec(fills)
+  override def toMat(fills: Iterable[Double]): Vec = toVec(fills)
+
+  override def toMat(fillsIter: Iterator[Double]): Vec = toVec(fillsIter)
 
   override lazy val numberOfNone: Int = to1DOptionVector.count(_.isEmpty)
 }
@@ -27,6 +30,9 @@ class RowVecOption(override val to1DOptionVector: Vector[Option[Double]]) extend
     val fillsIter = fills.iterator
     RowVec(to1DOptionVector.map(_.getOrElse(fillsIter.next())))
   }
+
+  override def toVec(fillsIter: Iterator[Double]): RowVec =
+    RowVec(to1DOptionVector.map(_.getOrElse(fillsIter.next())))
 
   def height: Int = 1
   override lazy val width: Int = to1DOptionVector.length
@@ -51,6 +57,9 @@ class ColVecOption(override val to1DOptionVector: Vector[Option[Double]]) extend
     val fillsIter = fills.iterator
     ColVec(to1DOptionVector.map(_.getOrElse(fillsIter.next())))
   }
+
+  override def toVec(fillsIter: Iterator[Double]): ColVec =
+    ColVec(to1DOptionVector.map(_.getOrElse(fillsIter.next())))
 
   def width: Int = 1
   override lazy val height: Int = to1DOptionVector.length

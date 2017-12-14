@@ -44,12 +44,12 @@ class RowVec(override val to1DVector: Vector[Double]) extends Vec {
     }
   }
 
-  override def * (that: Double): Mat =
+  override def * (that: Double): RowVec =
     if (that == 1.0) this else {
       new RowVec(to1DVector.map(_ * that))
     }
 
-  override def + (that: Mat): Mat = {
+  override def + (that: Mat): RowVec = {
     require(dim == that.dim, "DenseMat: Matrix dimension must compile")
     that match {
       case rv: RowVec =>
@@ -57,7 +57,7 @@ class RowVec(override val to1DVector: Vector[Double]) extends Vec {
     }
   }
 
-  override def - (that: Mat): Mat = {
+  override def - (that: Mat): RowVec = {
     require(dim == that.dim, "DenseMat: Matrix dimension must compile")
     that match {
       case rv: RowVec =>
@@ -88,6 +88,10 @@ class RowVec(override val to1DVector: Vector[Double]) extends Vec {
         DenseMat(Vector(to1DVector, rv.to1DVector))
     }
   }
+
+  override def inverse: Mat = ???
+
+  override def transpose: ColVec = ColVec(to1DVector)
 }
 
 object RowVec{
@@ -128,12 +132,12 @@ class ColVec(override val to1DVector: Vector[Double]) extends Vec {
     }
   }
 
-  override def * (that: Double): Mat =
+  override def * (that: Double): ColVec =
     if (that == 1.0) this else {
       new ColVec(to1DVector.map(_ * that))
     }
 
-  override def + (that: Mat): Mat = {
+  override def + (that: Mat): ColVec = {
     require(dim == that.dim, "DenseMat: Matrix dimension must compile")
     that match {
       case rv: ColVec =>
@@ -141,7 +145,7 @@ class ColVec(override val to1DVector: Vector[Double]) extends Vec {
     }
   }
 
-  override def - (that: Mat): Mat = {
+  override def - (that: Mat): ColVec = {
     require(dim == that.dim, "DenseMat: Matrix dimension must compile")
     that match {
       case rv: ColVec =>
@@ -179,6 +183,10 @@ class ColVec(override val to1DVector: Vector[Double]) extends Vec {
 
   override def colSeqs: SeqView[Vector[Double], scala.Seq[_]] = Seq(to1DVector).view
   override def cols: SeqView[ColVec, scala.Seq[_]] = Seq(this).view
+
+  override def inverse: Mat = ???
+
+  override def transpose: RowVec = RowVec(to1DVector)
 }
 
 object ColVec{

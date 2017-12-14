@@ -20,11 +20,11 @@ import org.apache.commons.math3.filter.{KalmanFilter => JKalmanFilter}
   */
 
 case class KalmanFilter(
-  A: Mat,
-  B: Mat,
-  H: Mat,
-  Q: Mat,
-  R: Mat,
+  A : Mat,
+  B : Mat,
+  H : Mat,
+  Q : Mat,
+  R : Mat,
   P0: Mat,
   x0: ColVec
 ) {
@@ -41,12 +41,28 @@ case class KalmanFilter(
   val mm = new DefaultMeasurementModel(H.realMatrix, R.realMatrix)
   val filter = new JKalmanFilter(pm, mm)
 
+  def process(input: Seq[(ColVec, ColVec)]): Seq[(ColVec, Mat)] =
+    input.map {
+      case (u, z) =>
+        filter.predict(u.realVector)
+        filter.correct(z.realVector)
+        (getStateEstimation, getErrorCovariance)
+    }.toSeq
+
+  final def process(us: Seq[ColVec], zs: Seq[ColVec]): Seq[(ColVec, Mat)] = {
+    require(us.size == zs.size)
+    process((us, zs).zipped.toSeq)
+  }
+
   def predict(u: ColVec): Unit =
     filter.predict(u.realVector)
+
   def correct(z: ColVec): Unit =
     filter.correct(z.realVector)
+
   def getStateEstimation: ColVec =
-    ColVec(filter.getStateEstimation.toVector)
+    ColVec(filter.getStateEstimationVector)
+
   def getErrorCovariance: Mat =
     DenseMat(filter.getErrorCovarianceMatrix)
 }

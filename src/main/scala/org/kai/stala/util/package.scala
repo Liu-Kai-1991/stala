@@ -2,6 +2,8 @@ package org.kai.stala
 
 import java.lang.{Byte => JByte, Double => JDouble, Float => JFloat, Integer => JInt, Long => JLong, Short => JShort}
 
+import org.apache.commons.math3.linear.{MatrixUtils, RealMatrix}
+
 import scala.reflect.{ClassTag, classTag}
 
 package object util {
@@ -69,5 +71,17 @@ package object util {
     case `scalaByte` => xs.map(x => JByte.valueOf(x.asInstanceOf[Byte]))
     case `scalaFloat` => xs.map(x => JFloat.valueOf(x.asInstanceOf[Float]))
     case `scalaShort` => xs.map(x => JShort.valueOf(x.asInstanceOf[Short]))
+  }
+
+  trait CachedRTFunction
+
+  case class CachedRTFunction0D[To] (f: () => To) extends CachedRTFunction{
+    private var toOption: Option[To] = None
+    def apply(): To =
+      if (toOption.isDefined) toOption.get
+      else {
+        toOption = Some(f())
+        toOption.get
+      }
   }
 }

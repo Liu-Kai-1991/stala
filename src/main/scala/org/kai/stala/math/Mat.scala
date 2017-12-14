@@ -1,6 +1,6 @@
 package org.kai.stala.math
 
-import org.apache.commons.math3.linear.{MatrixUtils, RealMatrix}
+import org.apache.commons.math3.linear.{LUDecomposition, MatrixUtils, RealMatrix}
 
 import scala.collection.immutable._
 import org.kai.stala.util._
@@ -35,14 +35,9 @@ trait Mat{
   def + (that: Mat): Mat
   def - (that: Mat): Mat
 
-  private var realMatrixOption: Option[RealMatrix] = None
-  protected def getRealMatrix: RealMatrix = MatrixUtils.createRealMatrix(to2DVector.toArray.map(_.toArray))
-  def realMatrix: RealMatrix =
-    if (realMatrixOption.isDefined) realMatrixOption.get
-    else {
-      realMatrixOption = Some(getRealMatrix)
-      realMatrixOption.get
-    }
+  val realMatrixCached: CachedRTFunction0D[RealMatrix] =
+    CachedRTFunction0D(() => MatrixUtils.createRealMatrix(to2DVector.toArray.map(_.toArray)))
+  def realMatrix: RealMatrix = realMatrixCached()
 
   def isSquare: Boolean = dim._1 == dim._2
 
@@ -63,6 +58,11 @@ trait Mat{
   def cBind(that: Mat): Mat
   def rBind(that: Mat): Mat
   def map(f: Double => Double): Mat
+
+  val lUDecomposition: CachedRTFunction0D[LUDecomposition] = CachedRTFunction0D(() => new LUDecomposition(realMatrix))
+  def determinant: Double = lUDecomposition().getDeterminant
+  def inverse: Mat
+  def transpose: Mat
 }
 
 object Mat{
@@ -99,8 +99,6 @@ class DenseMat protected(val m: Vector[Vector[Double]]) extends Mat {
   override lazy val height: Int = m.length
   override lazy val width: Int = m.head.length
   override def to2DVector: Vector[Vector[Double]] = m
-
-  override protected def getRealMatrix: RealMatrix = MatrixUtils.createRealMatrix(m.map(_.toArray).toArray)
 
   override def map(f: Double => Double): DenseMat = DenseMat(m.map(_.map(f)))
 
@@ -180,6 +178,13 @@ class DenseMat protected(val m: Vector[Vector[Double]]) extends Mat {
       case rv: RowVec =>
         DenseMat(m :+ rv.to1DVector)
     }
+  }
+
+  override def inverse: Mat =
+    DenseMat(lUDecomposition().getSolver.getInverse)
+
+  override def transpose: Mat = {
+    DenseMat(m.transpose)
   }
 }
 

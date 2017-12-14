@@ -1,7 +1,5 @@
 package org.kai.stala.math
 
-import scala.reflect.{ClassTag, classTag}
-
 trait MatOption {
   def apply(i: Int, j: Int): Option[Double]
   def height: Int
@@ -12,6 +10,7 @@ trait MatOption {
   def numberOfNone: Int
   def toMat(fills: Iterable[Double]): Mat
   def toMat(fill: Double): Mat
+  def toMat(fillsIter: Iterator[Double]): Mat
 
   def printMat(): Unit = {
     val header = s"${this.getClass.getSimpleName}: ${dim._1} * ${dim._2}"
@@ -49,6 +48,10 @@ class DenseMatOption(m: Vector[Vector[Option[Double]]]) extends MatOption{
   override def toMat(fills: Iterable[Double]): Mat = {
     require(numberOfNone == fills.size, "numberOfNone should equal to sequence length")
     val fillsIter = fills.iterator
+    DenseMat(m.map(_.map(_.getOrElse(fillsIter.next()))))
+  }
+
+  override def toMat(fillsIter: Iterator[Double]): Mat = {
     DenseMat(m.map(_.map(_.getOrElse(fillsIter.next()))))
   }
 }

@@ -31,5 +31,8 @@ dependencies {
     // https://mvnrepository.com/artifact/org.apache.commons/commons-math3
     compile group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
 
+    // https://mvnrepository.com/artifact/de.erichseifert.gral/gral-core
+    compile group: 'de.erichseifert.gral', name: 'gral-core', version: '0.11'
+
     testCompile 'junit:junit:4.12'
 }

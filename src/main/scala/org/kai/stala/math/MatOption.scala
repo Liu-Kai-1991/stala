@@ -13,27 +13,30 @@ trait MatOption {
   def toMat(fillsIter: Iterator[Double]): Mat
 
   def printMat(): Unit = {
-    val header = s"${this.getClass.getSimpleName}: ${dim._1} * ${dim._2}"
+    val header = s"${ this.getClass.getSimpleName }: ${ dim._1 } * ${ dim._2 }"
     println(header)
     println(header.map(_ => "=").mkString)
     to2DOptionVector.foreach{
-      row => println(row.map{
-        case None => "None"
-        case Some(d) => d.toString
-      }.mkString(" "))
+      row =>
+        println(row.map{
+          case None => "None"
+          case Some(d) => d.toString
+        }.mkString(" "))
     }
   }
 
   override def toString: String = {
-    s"${this.getClass.getSimpleName}" +
-      s"(${Range(0, height).map(i => Range(0, width).map(j => apply(i, j)).map{
-        case None => "None"
-        case Some(d) => d.toString
-      }.mkString(", ")).mkString("; ")})"
+    s"${ this.getClass.getSimpleName }" +
+      s"(${
+        Range(0, height).map(i => Range(0, width).map(j => apply(i, j)).map{
+          case None => "None"
+          case Some(d) => d.toString
+        }.mkString(", ")).mkString("; ")
+      })"
   }
 }
 
-class DenseMatOption(m: Vector[Vector[Option[Double]]]) extends MatOption{
+class DenseMatOption(m: Vector[Vector[Option[Double]]]) extends MatOption {
   override lazy val height: Int = m.length
   override lazy val width: Int = m.head.length
   override lazy val numberOfNone: Int = m.map(_.count(_.isEmpty)).sum
@@ -56,15 +59,19 @@ class DenseMatOption(m: Vector[Vector[Option[Double]]]) extends MatOption{
   }
 }
 
-object MatOption{
+object DenseMatOption {
+  def apply(m: DenseMat): DenseMatOption = new DenseMatOption(m.to2DVector.map(_.map(Some.apply)))
+}
+
+object MatOption {
   def doubleOption(x: Any): Option[Double] = x match {
     case Some(b) => Some(Mat.doubleValue(b))
     case b: Double => Some(b)
-    case b: Int=> Some(b.toDouble)
+    case b: Int => Some(b.toDouble)
     case b: Byte => Some(b.toDouble)
     case b: Short => Some(b.toDouble)
-    case b: Long=> Some(b.toDouble)
-    case b: Float=> Some(b.toDouble)
+    case b: Long => Some(b.toDouble)
+    case b: Float => Some(b.toDouble)
     case None => None
     // Forbid Char to be casted as Double. case b: Char=> b.toDouble
     case nonNumeric => throw new IllegalArgumentException(s"Non numeric type in Mat.apply: $nonNumeric")
@@ -80,4 +87,10 @@ object MatOption{
 
   def empty(height: Int, width: Int): MatOption =
     new DenseMatOption(Vector.fill[Vector[Option[Double]]](height)(Vector.fill[Option[Double]](width)(None)))
+
+  def apply(m: Mat): MatOption = m match {
+    case d: DenseMat => new DenseMatOption(m.to2DVector.map(_.map(Some.apply)))
+    case rv: RowVec => new RowVecOption(rv.to1DVector.map(Some.apply))
+    case cv: ColVec => new ColVecOption(cv.to1DVector.map(Some.apply))
+  }
 }

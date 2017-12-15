@@ -1,30 +1,30 @@
 package org.kai.stala.stat.filter
 
-import org.kai.stala.math.{ColVec, DenseMat, Mat, RowVec}
+import org.kai.stala.math.{ ColVec, DenseMat, Mat, RowVec }
 import org.apache.commons.math3.filter.DefaultMeasurementModel
 import org.apache.commons.math3.filter.DefaultProcessModel
-import org.apache.commons.math3.filter.{KalmanFilter => JKalmanFilter}
+import org.apache.commons.math3.filter.{ KalmanFilter => JKalmanFilter }
 
 /** KalmanFilter
-  *
-  *  This is scala Kalman filter which wraps org.apache.commons.math3.filter.KalmanFilter
-  *   xk = Ax_{k-1} + Bu_{k-1} + w_{k-1}
-  *   zk = Hx_k + v_k.
-  *
-  *   A - state transition matrix
-  *   B - control input matrix
-  *   H - measurement matrix
-  *   Q - process noise covariance matrix
-  *   R - measurement noise covariance matrix
-  *   P0 - initial error covariance matrix
-  */
+ *
+ * This is scala Kalman filter which wraps org.apache.commons.math3.filter.KalmanFilter
+ * xk = Ax_{k-1} + Bu_{k-1} + w_{k-1}
+ * zk = Hx_k + v_k.
+ *
+ * A - state transition matrix
+ * B - control input matrix
+ * H - measurement matrix
+ * Q - process noise covariance matrix
+ * R - measurement noise covariance matrix
+ * P0 - initial error covariance matrix
+ */
 
 case class KalmanFilter(
-  A : Mat,
-  B : Mat,
-  H : Mat,
-  Q : Mat,
-  R : Mat,
+  A: Mat,
+  B: Mat,
+  H: Mat,
+  Q: Mat,
+  R: Mat,
   P0: Mat,
   x0: ColVec
 ) {
@@ -42,7 +42,7 @@ case class KalmanFilter(
   val filter = new JKalmanFilter(pm, mm)
 
   def process(input: Seq[(ColVec, ColVec)]): Seq[(ColVec, Mat)] =
-    input.map {
+    input.map{
       case (u, z) =>
         filter.predict(u.realVector)
         filter.correct(z.realVector)

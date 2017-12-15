@@ -3,12 +3,13 @@ package org.kai.stala.stat.est
 import org.apache.commons.math3.optim.PointValuePair
 import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair
 
-trait OptimizationResultHandler{
+trait OptimizationResultHandler {
   def apply(x: Any): OptimizationResult
 }
 
-trait OptimizationResult{
+trait OptimizationResult {
   def parameters: Seq[Double]
+  def value: Double
 }
 
 case class EstimatedParameter(

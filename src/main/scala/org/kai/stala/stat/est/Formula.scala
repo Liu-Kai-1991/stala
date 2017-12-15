@@ -6,9 +6,9 @@ trait Formula[X <: Sample[X], Y <: Sample[Y]] {
   def numberOfParameters: Int
 }
 
-trait CompleteFormula[X <: Sample[X], Y <: Sample[Y]] extends Formula[X, Y]{
+trait CompleteFormula[X <: Sample[X], Y <: Sample[Y]] extends Formula[X, Y] {
   def logLikelihoodCalc(y: Y, estimated: Y): Double
   def logLikelihoodReal(y: Y, estimated: Y): Double = ???
   def fit(sample: X): Y
-  final def fitLogLikelihood(y: Y, sample: X): Double = logLikelihoodCalc(y, fit(sample))
+  final def fitLogLikelihood(sample: X, y: Y): Double = logLikelihoodCalc(y, fit(sample))
 }

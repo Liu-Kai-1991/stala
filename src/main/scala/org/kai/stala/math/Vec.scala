@@ -1,6 +1,6 @@
 package org.kai.stala.math
 
-import org.apache.commons.math3.linear.{MatrixUtils, RealMatrix, RealVector}
+import org.apache.commons.math3.linear.{ MatrixUtils, RealMatrix, RealVector }
 
 import scala.collection.SeqView
 import scala.collection.immutable._
@@ -33,23 +33,23 @@ class RowVec(override val to1DVector: Vector[Double]) extends Vec {
 
   override def map(f: Double => Double): RowVec = RowVec(to1DVector.map(f))
 
-  override def * (that: Mat): Mat = {
+  override def *(that: Mat): Mat = {
     require(width == that.height, "DenseMat: Matrix dimension must compile")
     that match {
       case d: DenseMat =>
         val rm = realMatrix.multiply(that.realMatrix)
         RowVec(rm.getRow(0).toVector)
       case cv: ColVec =>
-        Mat((to1DVector, cv.to1DVector).zipped.map(_*_).sum)
+        Mat((to1DVector, cv.to1DVector).zipped.map(_ * _).sum)
     }
   }
 
-  override def * (that: Double): RowVec =
+  override def *(that: Double): RowVec =
     if (that == 1.0) this else {
       new RowVec(to1DVector.map(_ * that))
     }
 
-  override def + (that: Mat): RowVec = {
+  override def +(that: Mat): RowVec = {
     require(dim == that.dim, "DenseMat: Matrix dimension must compile")
     that match {
       case rv: RowVec =>
@@ -57,7 +57,7 @@ class RowVec(override val to1DVector: Vector[Double]) extends Vec {
     }
   }
 
-  override def - (that: Mat): RowVec = {
+  override def -(that: Mat): RowVec = {
     require(dim == that.dim, "DenseMat: Matrix dimension must compile")
     that match {
       case rv: RowVec =>
@@ -94,15 +94,15 @@ class RowVec(override val to1DVector: Vector[Double]) extends Vec {
   override def transpose: ColVec = ColVec(to1DVector)
 }
 
-object RowVec{
+object RowVec {
   class RowVecJ(
-    override val to1DVector : Vector[Double],
-    override val realVector : RealVector
+    override val to1DVector: Vector[Double],
+    override val realVector: RealVector
   ) extends RowVec(to1DVector)
 
   def apply(v: Vector[Double]): RowVec = new RowVec(v)
-  def apply[T:ClassTag](v: T*)(implicit n: Numeric[T]): RowVec = new RowVec(v.toVector.map(n.toDouble))
-  def apply[T:ClassTag](v: Iterable[T])(implicit n: Numeric[T]): RowVec = new RowVec(v.toVector.map(n.toDouble))
+  def apply[T: ClassTag](v: T*)(implicit n: Numeric[T]): RowVec = new RowVec(v.toVector.map(n.toDouble))
+  def apply[T: ClassTag](v: Iterable[T])(implicit n: Numeric[T]): RowVec = new RowVec(v.toVector.map(n.toDouble))
   def apply(v: RealVector): RowVec = new RowVecJ(v.toArray.toVector, v)
   def fill(n: Int, v: Double): RowVec = new RowVec(Vector.fill[Double](n)(v))
 }
@@ -120,7 +120,7 @@ class ColVec(override val to1DVector: Vector[Double]) extends Vec {
 
   override def map(f: Double => Double): ColVec = ColVec(to1DVector.map(f))
 
-  override def * (that: Mat): Mat = {
+  override def *(that: Mat): Mat = {
     require(width == that.height, "DenseMat: Matrix dimension must compile")
     that match {
       case d: DenseMat =>
@@ -132,12 +132,12 @@ class ColVec(override val to1DVector: Vector[Double]) extends Vec {
     }
   }
 
-  override def * (that: Double): ColVec =
+  override def *(that: Double): ColVec =
     if (that == 1.0) this else {
       new ColVec(to1DVector.map(_ * that))
     }
 
-  override def + (that: Mat): ColVec = {
+  override def +(that: Mat): ColVec = {
     require(dim == that.dim, "DenseMat: Matrix dimension must compile")
     that match {
       case rv: ColVec =>
@@ -145,7 +145,7 @@ class ColVec(override val to1DVector: Vector[Double]) extends Vec {
     }
   }
 
-  override def - (that: Mat): ColVec = {
+  override def -(that: Mat): ColVec = {
     require(dim == that.dim, "DenseMat: Matrix dimension must compile")
     that match {
       case rv: ColVec =>
@@ -158,11 +158,11 @@ class ColVec(override val to1DVector: Vector[Double]) extends Vec {
     that match {
       case d: DenseMat =>
         DenseMat((to1DVector, d.m).zipped.map{
-          case (l,r) => l +: r
+          case (l, r) => l +: r
         })
       case cv: ColVec =>
         DenseMat((to1DVector, cv.to1DVector).zipped.map{
-          case (l,r) => Vector(l,r)
+          case (l, r) => Vector(l, r)
         })
       case rv: RowVec =>
         throw new IllegalArgumentException("Col vector can not cbind with row vector")
@@ -189,15 +189,15 @@ class ColVec(override val to1DVector: Vector[Double]) extends Vec {
   override def transpose: RowVec = RowVec(to1DVector)
 }
 
-object ColVec{
+object ColVec {
   class ColVecJ(
     override val to1DVector: Vector[Double],
     override val realVector: RealVector
   ) extends ColVec(to1DVector)
 
   def apply(v: Vector[Double]): ColVec = new ColVec(v)
-  def apply[T:ClassTag](v: T*)(implicit n: Numeric[T]): ColVec = new ColVec(v.toVector.map(n.toDouble))
-  def apply[T:ClassTag](v: Iterable[T])(implicit n: Numeric[T]): ColVec = new ColVec(v.toVector.map(n.toDouble))
+  def apply[T: ClassTag](v: T*)(implicit n: Numeric[T]): ColVec = new ColVec(v.toVector.map(n.toDouble))
+  def apply[T: ClassTag](v: Iterable[T])(implicit n: Numeric[T]): ColVec = new ColVec(v.toVector.map(n.toDouble))
   def apply(v: RealVector): ColVec = new ColVecJ(v.toArray.toVector, v)
   def fill(n: Int, v: Double): ColVec = new ColVec(Vector.fill[Double](n)(v))
 }

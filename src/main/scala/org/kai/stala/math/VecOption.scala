@@ -1,6 +1,6 @@
 package org.kai.stala.math
 
-trait VecOption extends MatOption{
+trait VecOption extends MatOption {
   def length: Int = to1DOptionVector.size
   def apply(i: Int): Option[Double] = to1DOptionVector(i)
   def toVec(fill: Double): Vec
@@ -38,9 +38,10 @@ class RowVecOption(override val to1DOptionVector: Vector[Option[Double]]) extend
   override lazy val width: Int = to1DOptionVector.length
 }
 
-object RowVecOption{
+object RowVecOption {
   def apply(v: Vector[Option[Double]]): RowVecOption = new RowVecOption(v)
   def apply(v: Any*): RowVecOption = new RowVecOption(v.toVector.map(MatOption.doubleOption))
+  def apply(rv: RowVec): RowVecOption = new RowVecOption(rv.to1DVector.map(Some.apply))
 }
 
 class ColVecOption(override val to1DOptionVector: Vector[Option[Double]]) extends VecOption {
@@ -65,7 +66,8 @@ class ColVecOption(override val to1DOptionVector: Vector[Option[Double]]) extend
   override lazy val height: Int = to1DOptionVector.length
 }
 
-object ColVecOption{
+object ColVecOption {
   def apply(v: Vector[Option[Double]]): ColVecOption = new ColVecOption(v)
   def apply(v: Any*): ColVecOption = new ColVecOption(v.toVector.map(MatOption.doubleOption))
+  def apply(cv: ColVec): ColVecOption = new ColVecOption(cv.to1DVector.map(Some.apply))
 }

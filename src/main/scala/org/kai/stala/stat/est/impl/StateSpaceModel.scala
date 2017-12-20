@@ -1,6 +1,7 @@
 package org.kai.stala.stat.est.impl
 
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
+import org.apache.commons.math3.optim.nonlinear.scalar.MultivariateOptimizer
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.{ NelderMeadSimplex, SimplexOptimizer }
 import org.apache.commons.math3.optim.univariate.{ BrentOptimizer, SearchInterval }
 import org.apache.commons.math3.optim.{ BaseOptimizer, InitialGuess, MaxEval, OptimizationData }
@@ -40,6 +41,7 @@ object StateSpaceModel {
     optimizerOption: Option[BaseOptimizer[_]] = None,
     optimizeResultHandler: OptimizationResultHandler = PointValuePairHandler,
     optimizerAlgoOption: Option[OptimizationData] = None,
+    searchIntervalOption: Option[(Double, Double)] = None
   ): StateSpaceModel = {
     val formula = new StateSpaceModelFormula(A, B, H, Q, R, P0, x0)
     val initialGuess = initialGuessOption.getOrElse(Seq.fill[Double](formula.numberOfParameters)(0.0))
@@ -58,11 +60,16 @@ object StateSpaceModel {
             None
         }
     }
+    val searchIntervalUsed = searchIntervalOption match {
+      case Some((l, u)) => Some(new SearchInterval(l, u))
+      case None =>
+        if (optimizer.isInstanceOf[MultivariateOptimizer]) None
+        else Some(new SearchInterval(defaultLowerBound, defaultUpperBound))
+    }
     val optimizationData: Seq[OptimizationData] = Seq(
       GoalType.MAXIMIZE,
       new InitialGuess(initialGuess.toArray),
-      new MaxEval(maxEval),
-      new SearchInterval(-1, 1)) ++ optimizerAlgoUsed
+      new MaxEval(maxEval)) ++ optimizerAlgoUsed ++ searchIntervalUsed
     new StateSpaceModel(formula, optimizer, optimizeResultHandler, optimizationData)
   }
 }
@@ -124,9 +131,7 @@ case class StateSpaceModelCompleteFormula(
 ) with CompleteFormula[SeqSample[(ColVec, ColVec)], SeqSample[(ColVec, Mat)]] {
   override def fit(sample: SeqSample[(ColVec, ColVec)]): SeqSample[(ColVec, Mat)] = {
     val filter = KalmanFilter(A, B, H, Q, R, P0, x0)
-    println(filter.A)
-    val res = SeqSample(filter.process(sample.s))
-    res
+    SeqSample(filter.process(sample.s))
   }
 
   /** KalmanFilter
@@ -139,17 +144,13 @@ case class StateSpaceModelCompleteFormula(
    * @return a new Person instance with the age determined by the
    *         birthdate and current date.
    */
-  override def logLikelihoodCalc(y: SeqSample[(ColVec, Mat)], estimated: SeqSample[(ColVec, Mat)]): Double = {
-    val res =
+  override def logLikelihoodCalc(y: SeqSample[(ColVec, Mat)], estimated: SeqSample[(ColVec, Mat)]): Double =
     (y.s, estimated.s).zipped.map{
       case ((obs, _), (est, cov)) =>
         val diff = obs - H * est
         val covObs = H * cov * H.transpose + R
-        -(math.log(covObs.determinant) + (diff.transpose * covObs * diff).apply(0, 0))
+        -(math.log(covObs.determinant) + (diff.transpose * covObs.inverse * diff).apply(0, 0))
     }.sum
-    println(res)
-    res
-  }
 
   override def logLikelihoodReal(y: SeqSample[(ColVec, Mat)], estimated: SeqSample[(ColVec, Mat)]): Double = {
     0.5 * (logLikelihoodCalc(y, estimated) + H.height * math.log(math.Pi))
